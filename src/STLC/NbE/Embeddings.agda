@@ -70,3 +70,23 @@ idₑ-right (keep p) = cong keep (idₑ-right p)
 ∈ₑ-idₑ-left : ∀ {t Γ}(v : t ∈ Γ) → ∈ₑ idₑ v ≡ v
 ∈ₑ-idₑ-left (here refl) = refl
 ∈ₑ-idₑ-left (there v) = cong there (∈ₑ-idₑ-left v)
+
+-- applying a composition of OPEs
+
+∈-∘ₑ : ∀ {t Γ₁ Γ₂ Γ₃}(p : OPE Γ₂ Γ₃)(q : OPE Γ₁ Γ₂)(v : t ∈ Γ₃) → ∈ₑ (p ∘ₑ q) v ≡ ∈ₑ q (∈ₑ p v)
+∈-∘ₑ done done ()
+∈-∘ₑ p (drop q) v = cong there (∈-∘ₑ p q v)
+∈-∘ₑ (drop p) (keep q) v = cong there (∈-∘ₑ p q v)
+∈-∘ₑ (keep p) (keep q) (here refl) = refl
+∈-∘ₑ (keep p) (keep q) (there v) = cong there (∈-∘ₑ p q v)
+
+-- embedding an OPE in a term.
+
+embed-⊢ : ∀ {Γ Γ' t} → OPE Γ Γ' → Γ' ⊢ t → Γ ⊢ t
+embed-⊢ p `true = `true
+embed-⊢ p `false = `true
+embed-⊢ p (`if e then e₁ else e₂)
+  = `if embed-⊢ p e then embed-⊢ p e₂ else embed-⊢ p e₂
+embed-⊢ p (`var x) = `var (∈ₑ p x)
+embed-⊢ p (`λ e) = `λ embed-⊢ (keep p) e
+embed-⊢ p (e ∙ e₁) = embed-⊢ p e ∙ embed-⊢ p e₁

@@ -113,13 +113,6 @@ rename p (e ∙ e₁) = rename p e ∙ rename p e₁
 
 -- relating renaming and composition
 
-cong₃ : ∀ {A B C D : Set}(f : A → B → C → D){x x' y y' z z'} →
-          x ≡ x' →
-          y ≡ y' →
-          z ≡ z' →
-          f x y z ≡ f x' y' z'
-cong₃ f refl refl refl = refl
-
 rename-∘r : ∀ {Γ₁ Γ₂ Γ₃}(p2 : Ren Γ₁ Γ₂)(p3 : Ren Γ₂ Γ₃){t}(e : Γ₃ ⊢ t)
             → rename p2 (rename p3 e) ≡ rename (p2 ∘r p3) e
 rename-∘r p2 p3 `true = refl

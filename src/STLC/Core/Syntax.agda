@@ -9,6 +9,15 @@ open import Data.Unit
 
 open import Relation.Binary.PropositionalEquality
 
+-- extra stuff
+
+cong₃ : ∀ {A B C D : Set}(f : A → B → C → D){x x' y y' z z'} →
+          x ≡ x' →
+          y ≡ y' →
+          z ≡ z' →
+          f x y z ≡ f x' y' z'
+cong₃ f refl refl refl = refl
+
 -- definition of types
 
 data Type : Set where
