@@ -21,7 +21,7 @@ Sub Γ' (t ∷ Γ) = Sub Γ' Γ × Γ' ⊢ t
 
 -- composing a renaming and a substitution
 
-_∘rs_ : ∀ {Γ₁ Γ₂ Γ₃} → Γ₁ ⊇ Γ₂ → Sub Γ₂ Γ₃ → Sub Γ₁ Γ₃
+_∘rs_ : ∀ {Γ₁ Γ₂ Γ₃} → Ren Γ₁ Γ₂ → Sub Γ₂ Γ₃ → Sub Γ₁ Γ₃
 _∘rs_ {Γ₁}{Γ₂}{[]} r s = tt
 _∘rs_ {Γ₁}{Γ₂}{t₃ ∷ Γ₃} r (s , e) = r ∘rs s , rename r e
 
@@ -57,7 +57,7 @@ sub0 e0 e = sub (tt , e0) e
 
 -- renaming composition right
 
-_∘sr_ : ∀ {Γ₁ Γ₂ Γ₃} → Sub Γ₁ Γ₂ → Γ₂ ⊇ Γ₃ → Sub Γ₁ Γ₃
+_∘sr_ : ∀ {Γ₁ Γ₂ Γ₃} → Sub Γ₁ Γ₂ → Ren Γ₂ Γ₃ → Sub Γ₁ Γ₃
 _∘sr_ {Γ₁}{Γ₂}{[]} s r = tt
 _∘sr_ {Γ₁}{Γ₂}{t₃ ∷ Γ₃} s (r , v) = s ∘sr r , sub-var s v
 
@@ -69,7 +69,7 @@ _∘ss_ {Γ₁}{Γ₂}{t₃ ∷ Γ₃} s1 (s2 , e2) = s1 ∘ss s2 , sub s1 e2
 
 -- lemmas about sub-var
 
-sub-var-∘rs : ∀ {Γ₁ Γ₂ Γ₃}(p : Γ₁ ⊇ Γ₂)(s : Sub Γ₂ Γ₃){t}
+sub-var-∘rs : ∀ {Γ₁ Γ₂ Γ₃}(p : Ren Γ₁ Γ₂)(s : Sub Γ₂ Γ₃){t}
                 (v : t ∈ Γ₃) → sub-var (p ∘rs s) v ≡ rename p (sub-var s v)
 sub-var-∘rs p s (here refl) = refl
 sub-var-∘rs p (s , _) (there v) = sub-var-∘rs p s v
@@ -79,7 +79,7 @@ sub-var-∘ss : ∀ {Γ₁ Γ₂ Γ₃ t}(s1 : Sub Γ₁ Γ₂)(s2 : Sub Γ₂ �
 sub-var-∘ss s1 s2 (here refl) = refl
 sub-var-∘ss s1 (s2 , _) (there v) = sub-var-∘ss s1 s2 v
 
-sub-var-∘sr : ∀ {Γ₁ Γ₂ Γ₃ t}(s : Sub Γ₁ Γ₂)(r : Γ₂ ⊇ Γ₃)(v : t ∈ Γ₃) →
+sub-var-∘sr : ∀ {Γ₁ Γ₂ Γ₃ t}(s : Sub Γ₁ Γ₂)(r : Ren Γ₂ Γ₃)(v : t ∈ Γ₃) →
               sub-var s (ren-var r v) ≡ sub-var (s ∘sr r) v
 sub-var-∘sr s r (here refl) = refl
 sub-var-∘sr s r (there v) = sub-var-∘sr s (proj₁ r) v
@@ -101,13 +101,13 @@ sub-var-id (there v)
 
 -- lemmas about composition
 
-∘rsr-assoc : ∀ {Γ₁ Γ₂ Γ₃ Γ₄}(r : Γ₁ ⊇ Γ₂)(s : Sub Γ₂ Γ₃)(r' : Γ₃ ⊇ Γ₄) →
+∘rsr-assoc : ∀ {Γ₁ Γ₂ Γ₃ Γ₄}(r : Ren Γ₁ Γ₂)(s : Sub Γ₂ Γ₃)(r' : Ren Γ₃ Γ₄) →
              (r ∘rs s) ∘sr r' ≡ r ∘rs (s ∘sr r')
 ∘rsr-assoc {_}{_}{_}{[]} r s r' = refl
 ∘rsr-assoc {_}{_}{_}{t₄ ∷ Γ₄} r s (r' , v')
   = cong₂ _,_ (∘rsr-assoc r s r') (sub-var-∘rs r s v')
 
-∘sr-strength-ren' : ∀ {Γ₁ Γ₂ Γ₃}{t}(s : Sub Γ₁ Γ₂)(r : Γ₂ ⊇ Γ₃)
+∘sr-strength-ren' : ∀ {Γ₁ Γ₂ Γ₃}{t}(s : Sub Γ₁ Γ₂)(r : Ren Γ₂ Γ₃)
                       {e : _ ⊢ t} → (s , e) ∘sr (wk-ren r) ≡ s ∘sr r
 ∘sr-strength-ren' {Γ₁} {Γ₂} {[]} s r = refl
 ∘sr-strength-ren' {Γ₁} {Γ₂} {t₃ ∷ Γ₃} s (r , x)
@@ -136,7 +136,7 @@ sub-id {e = e ∙ e₁} = cong₂ _∙_ sub-id sub-id
 
 -- more lemmas about composition
 
-sub-∘rs : ∀ {Γ₁ Γ₂ Γ₃}{t}(r : Γ₃ ⊇ Γ₁)(s : Sub Γ₁ Γ₂)(e : Γ₂ ⊢ t) →
+sub-∘rs : ∀ {Γ₁ Γ₂ Γ₃}{t}(r : Ren Γ₃ Γ₁)(s : Sub Γ₁ Γ₂)(e : Γ₂ ⊢ t) →
           rename r (sub s e) ≡ sub (r ∘rs s) e
 sub-∘rs r s `true = refl
 sub-∘rs r s `false = refl
@@ -149,7 +149,7 @@ sub-∘rs r s (`λ e) = cong `λ_ (trans (sub-∘rs (weaken r) (weak-sub s) e)
                                                  (lemma2 r s))))
     where
       open ≡-Reasoning
-      lemma1 : ∀ {Γ₄ Γ₅}(r₁ : Γ₅ ⊇ Γ₄){t₃} →
+      lemma1 : ∀ {Γ₄ Γ₅}(r₁ : Ren Γ₅ Γ₄){t₃} →
                  (weaken {_}{_}{t₃} r₁) ∘r (wk-ren id-ren) ≡ (wk-ren id-ren) ∘r r₁
       lemma1 {Γ₄}{Γ₅} r
         = begin
@@ -164,7 +164,7 @@ sub-∘rs r s (`λ e) = cong `λ_ (trans (sub-∘rs (weaken r) (weak-sub s) e)
             (wk-ren id-ren) ∘r r
           ∎
 
-      lemma2 : ∀ {Γ₁ Γ₂ Γ₄ t}(r : Γ₄ ⊇ Γ₁)(s : Sub Γ₁ Γ₂) →
+      lemma2 : ∀ {Γ₁ Γ₂ Γ₄ t}(r : Ren Γ₄ Γ₁)(s : Sub Γ₁ Γ₂) →
                (weaken {_}{_}{t} r) ∘rs (proj₁ (weak-sub s)) ≡ wk ∘rs (r ∘rs s)
       lemma2 {Γ₂ = []} r s = refl
       lemma2 {Γ₂ = t₂ ∷ Γ₂} r (s , e₃) rewrite refl
@@ -182,7 +182,7 @@ sub-∘rs r s (e ∙ e₁) = cong₂ _∙_ (sub-∘rs r s e) (sub-∘rs r s e₁
 
 -- associativity theorem
 
-∘rss-assoc : ∀ {Γ₁ Γ₂ Γ₃ Γ₄}(r : Γ₄ ⊇ Γ₁)(s : Sub Γ₁ Γ₂)(s' : Sub Γ₂ Γ₃) →
+∘rss-assoc : ∀ {Γ₁ Γ₂ Γ₃ Γ₄}(r : Ren Γ₄ Γ₁)(s : Sub Γ₁ Γ₂)(s' : Sub Γ₂ Γ₃) →
              r ∘rs (s ∘ss s') ≡ (r ∘rs s) ∘ss s'
 ∘rss-assoc {Γ₃ = []} r s s' = refl
 ∘rss-assoc {Γ₃ = t₃ ∷ Γ₃} r s (s' , e')
@@ -191,7 +191,7 @@ sub-∘rs r s (e ∙ e₁) = cong₂ _∙_ (sub-∘rs r s e) (sub-∘rs r s e₁
 
 -- more boring results about composition of renamings and substitutions
 
-sub-∘sr : ∀ {Γ₁ Γ₂ Γ₃ t}(s : Sub Γ₁ Γ₂)(r : Γ₂ ⊇ Γ₃)(e : Γ₃ ⊢ t) →
+sub-∘sr : ∀ {Γ₁ Γ₂ Γ₃ t}(s : Sub Γ₁ Γ₂)(r : Ren Γ₂ Γ₃)(e : Γ₃ ⊢ t) →
             sub s (rename r e) ≡ sub (s ∘sr r) e
 sub-∘sr s r `true = refl
 sub-∘sr s r `false = refl
@@ -203,14 +203,14 @@ sub-∘sr s r (`λ e) = cong `λ_ (trans (sub-∘sr (weak-sub s) (weaken r) e)
                                     (cong (λ x → x , `var (here refl))
                                           (lemma s r))))
   where
-    lemma : ∀ {Γ₁ Γ₂ Γ₃ t}(s : Sub Γ₁ Γ₂)(r : Γ₂ ⊇ Γ₃) →
+    lemma : ∀ {Γ₁ Γ₂ Γ₃ t}(s : Sub Γ₁ Γ₂)(r : Ren Γ₂ Γ₃) →
             (weak-sub {_}{_}{t} s) ∘sr (wk-ren r) ≡ wk ∘rs (s ∘sr r)
     lemma s r = trans (∘sr-strength-ren' (wk-ren id-ren ∘rs s) r)
                       (∘rsr-assoc (wk-ren id-ren) s r)
 sub-∘sr s r (e ∙ e₁) = cong₂ _∙_ (sub-∘sr s r e) (sub-∘sr s r e₁)
 
 
-∘srs-assoc : ∀ {Γ₁ Γ₂ Γ₃ Γ₄}(s : Sub Γ₁ Γ₂)(r : Γ₂ ⊇ Γ₃)(s' : Sub Γ₃ Γ₄) →
+∘srs-assoc : ∀ {Γ₁ Γ₂ Γ₃ Γ₄}(s : Sub Γ₁ Γ₂)(r : Ren Γ₂ Γ₃)(s' : Sub Γ₃ Γ₄) →
              s ∘ss (r ∘rs s') ≡ (s ∘sr r) ∘ss s'
 ∘srs-assoc {Γ₄ = []} s r s' = refl
 ∘srs-assoc {Γ₄ = t₄ ∷ Γ₄} s r (s' , e')

@@ -1,4 +1,4 @@
-module NbE.Embeddings where
+module STLC.NbE.Embeddings where
 
 open import Data.List hiding (drop)
 open import Data.List.Membership.Propositional
@@ -6,7 +6,7 @@ open import Data.List.Relation.Unary.Any
 
 open import Relation.Binary.PropositionalEquality
 
-open import Core.STLC
+open import STLC.Core.Syntax
 
 
 -- definition order preserving embeddings

@@ -16,7 +16,7 @@ open import STLC.Core.Syntax
 
 Ren : Ctx → Ctx → Set
 Ren Γ' [] = ⊤
-Ren Γ' (t ∷ Γ) = Ren Γ' (Γ × (t ∈ Γ')) 
+Ren Γ' (t ∷ Γ) = Ren Γ' Γ × (t ∈ Γ') 
 
 -- renaming variables
 
@@ -45,12 +45,12 @@ _∘r_ {Γ₁} {Γ₂} {t₃ ∷ Γ₃} p2 (p3 , v3) = p2 ∘r p3 , ren-var p2 v
 
 -- relating composition and renaming var
 
-rename-var-∘r : ∀ {Γ₁ Γ₂ Γ₃ t}(p2 : Γ₁ ⊇ Γ₂)(p3 : Γ₂ ⊇ Γ₃)(v : t ∈ Γ₃) →
+rename-var-∘r : ∀ {Γ₁ Γ₂ Γ₃ t}(p2 : Ren Γ₁ Γ₂)(p3 : Ren Γ₂ Γ₃)(v : t ∈ Γ₃) →
                 ren-var p2 (ren-var p3 v) ≡ ren-var (p2 ∘r p3) v 
 rename-var-∘r p2 p3 (here refl) = refl
 rename-var-∘r p2 p3 (there v) = rename-var-∘r p2 (proj₁ p3) v
 
-∘r-assoc : ∀ {Γ₁ Γ₂ Γ₃ Γ₄}(p2 : Γ₁ ⊇ Γ₂)(p3 : Γ₂ ⊇ Γ₃)(p4 : Γ₃ ⊇ Γ₄) →
+∘r-assoc : ∀ {Γ₁ Γ₂ Γ₃ Γ₄}(p2 : Ren Γ₁ Γ₂)(p3 : Ren Γ₂ Γ₃)(p4 : Ren Γ₃ Γ₄) →
            p2 ∘r (p3 ∘r p4) ≡ (p2 ∘r p3) ∘r p4
 ∘r-assoc {Γ₄ = []} p2 p3 p4 = refl
 ∘r-assoc {Γ₄ = t₄ ∷ Γ₄} p2 p3 (p4 , v4)
@@ -58,7 +58,7 @@ rename-var-∘r p2 p3 (there v) = rename-var-∘r p2 (proj₁ p3) v
 
 -- relating renamings and weakening
 
-wk-ren-var : ∀ {Γ₁ Γ₂ t₁ t₂}(p : Γ₁ ⊇ Γ₂)(v : t₁ ∈ Γ₂) →
+wk-ren-var : ∀ {Γ₁ Γ₂ t₁ t₂}(p : Ren Γ₁ Γ₂)(v : t₁ ∈ Γ₂) →
                ren-var (wk-ren {t = t₂} p) v ≡ there (ren-var p v)
 wk-ren-var p (here refl) = refl
 wk-ren-var p (there v) = wk-ren-var (proj₁ p) v
@@ -73,14 +73,14 @@ ren-var-ident (t ∷ Γ) (there v) = ren-var-id v
 
 -- strengthing a renaming
 
-strength-ren' : ∀ {Γ₁ Γ₂ Γ₃}(p2 : Γ₁ ⊇ Γ₂)(p3 : Γ₂ ⊇ Γ₃){t}(v : t ∈ Γ₁) →
+strength-ren' : ∀ {Γ₁ Γ₂ Γ₃}(p2 : Ren Γ₁ Γ₂)(p3 : Ren Γ₂ Γ₃){t}(v : t ∈ Γ₁) →
                 (p2 , v) ∘r (wk-ren p3) ≡ (p2 ∘r p3)
 strength-ren' {Γ₁} {_} {[]} p2 p3 v = refl
 strength-ren' {Γ₁} {_} {t₃ ∷ Γ₃} p2 (p3 , v3) v
   = cong (λ x → x , ren-var p2 v3) (strength-ren' p2 p3 _)
 
-∘r-idr : ∀ {Γ₁ Γ₂} (p2 : Γ₁ ⊇ Γ₂) → p2 ∘r id-ren ≡ p2
-strength : ∀ {Γ₁ Γ₂}(p2 : Γ₁ ⊇ Γ₂){t}(v : t ∈ Γ₁) →
+∘r-idr : ∀ {Γ₁ Γ₂} (p2 : Ren Γ₁ Γ₂) → p2 ∘r id-ren ≡ p2
+strength : ∀ {Γ₁ Γ₂}(p2 : Ren Γ₁ Γ₂){t}(v : t ∈ Γ₁) →
            (p2 , v) ∘r wk ≡ p2
 
 strength p2 v = trans (strength-ren' p2 id-ren v) (∘r-idr p2)
@@ -90,19 +90,19 @@ strength p2 v = trans (strength-ren' p2 id-ren v) (∘r-idr p2)
 
 -- relating wk-ren and wk
 
-wk-ren-def : ∀ {Γ₁ Γ₂ t}(p : Γ₁ ⊇ Γ₂) → wk-ren {t = t} p ≡ wk ∘r p
+wk-ren-def : ∀ {Γ₁ Γ₂ t}(p : Ren Γ₁ Γ₂) → wk-ren {t = t} p ≡ wk ∘r p
 wk-ren-def {Γ₂ = []} p = refl
 wk-ren-def {Γ₂ = t₂ ∷ Γ₂} (p , v)
   = cong₂ _,_ (wk-ren-def p) (sym (ren-var-id v))
 
 -- introduce a new variable in a renaming
 
-weaken : ∀ {Γ₁ Γ₂ t} → Γ₂ ⊇ Γ₁ → (t ∷ Γ₂) ⊇ (t ∷ Γ₁)
+weaken : ∀ {Γ₁ Γ₂ t} → Ren Γ₂ Γ₁ → Ren (t ∷ Γ₂) (t ∷ Γ₁)
 weaken p = wk-ren p , here refl
 
 -- defining a renaming
 
-rename : ∀ {Γ₁ Γ₂ t} → Γ₂ ⊇ Γ₁ → Γ₁ ⊢ t → Γ₂ ⊢ t
+rename : ∀ {Γ₁ Γ₂ t} → Ren Γ₂ Γ₁ → Γ₁ ⊢ t → Γ₂ ⊢ t
 rename p `true = `true
 rename p `false = `false
 rename p (`if e then e₁ else e₂)
@@ -120,7 +120,7 @@ cong₃ : ∀ {A B C D : Set}(f : A → B → C → D){x x' y y' z z'} →
           f x y z ≡ f x' y' z'
 cong₃ f refl refl refl = refl
 
-rename-∘r : ∀ {Γ₁ Γ₂ Γ₃}(p2 : Γ₁ ⊇ Γ₂)(p3 : Γ₂ ⊇ Γ₃){t}(e : Γ₃ ⊢ t)
+rename-∘r : ∀ {Γ₁ Γ₂ Γ₃}(p2 : Ren Γ₁ Γ₂)(p3 : Ren Γ₂ Γ₃){t}(e : Γ₃ ⊢ t)
             → rename p2 (rename p3 e) ≡ rename (p2 ∘r p3) e
 rename-∘r p2 p3 `true = refl
 rename-∘r p2 p3 `false = refl
